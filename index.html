@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>vkhanhh v2 - Phân tích tài xỉu MD5</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #1e1e2f;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 50px;
+    }
+    textarea {
+      width: 400px;
+      height: 100px;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 16px;
+      resize: none;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #28a745;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 30px;
+      width: 80%;
+      text-align: left;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>vkhanhh v2 - Phân tích MD5 tài xỉu</h1>
+  <p>Dán mã MD5 vào đây:</p>
+  <textarea id="md5Input" placeholder="Nhập mã MD5 vào đây..."></textarea><br>
+  <button onclick="analyzeMD5()">Phân tích</button>
+  <div id="result"></div>
+
+  <script>
+    function analyzeMD5() {
+      const md5 = document.getElementById("md5Input").value.trim().toLowerCase();
+      const resultDiv = document.getElementById("result");
+
+      if (md5.length !== 32 || !/^[a-f0-9]{32}$/.test(md5)) {
+        resultDiv.innerHTML = "❌ Mã MD5 không hợp lệ. Hãy nhập đúng 32 ký tự hex (a-f, 0-9).";
+        return;
+      }
+
+      // Phân tích ký tự
+      let count = {
+        digits: 0,
+        letters: 0,
+        evenDigits: 0,
+        oddDigits: 0,
+        hexGroups: {
+          a_f: 0,
+          num_0_7: 0,
+          high: 0
+        }
+      };
+
+      for (let char of md5) {
+        if (!isNaN(parseInt(char))) {
+          count.digits++;
+          parseInt(char) % 2 === 0 ? count.evenDigits++ : count.oddDigits++;
+          if (parseInt(char) <= 7) count.hexGroups.num_0_7++;
+          else count.hexGroups.high++;
+        } else {
+          count.letters++;
+          count.hexGroups.a_f++;
+        }
+      }
+
+      // Thuật toán phân tích thống kê (ví dụ logic: nếu số chẵn > lẻ => tài cao hơn)
+      let total = count.digits + count.letters;
+      let ratio_even = count.evenDigits / total;
+      let ratio_odd = count.oddDigits / total;
+
+      // Sử dụng các yếu tố để dự đoán
+      let taiScore = 0;
+      let xiuScore = 0;
+
+      taiScore += ratio_even * 60;
+      xiuScore += ratio_odd * 60;
+
+      if (count.letters > count.digits) taiScore += 10;
+      else xiuScore += 10;
+
+      if (count.hexGroups.high > count.hexGroups.num_0_7) taiScore += 10;
+      else xiuScore += 10;
+
+      // Chuẩn hóa tỉ lệ
+      let totalScore = taiScore + xiuScore;
+      let taiPercent = ((taiScore / totalScore) * 100).toFixed(2);
+      let xiuPercent = ((xiuScore / totalScore) * 100).toFixed(2);
+
+      resultDiv.innerHTML = `
+🔍 <strong>Kết quả phân tích MD5:</strong>\n
+- Ký tự số: ${count.digits}
+- Ký tự chữ (a-f): ${count.letters}
+- Số chẵn: ${count.evenDigits}
+- Số lẻ: ${count.oddDigits}
+- Nhóm a-f: ${count.hexGroups.a_f}
+- Số từ 0-7: ${count.hexGroups.num_0_7}
+- Số lớn (8-9): ${count.hexGroups.high}
+
+🎯 <strong>Dự đoán kết quả:</strong>
+🔴 Tài: ${taiPercent}%
+🔵 Xỉu: ${xiuPercent}%
+      `;
+    }
+  </script>
+</body>
+</html>
